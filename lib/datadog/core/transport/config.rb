@@ -41,7 +41,9 @@ module Datadog
 
           ##### there is only one transport! it's negotiation!
           def send_config(payload)
+            Datadog.logger.error { "Datadog::Core::Transport::Config#send_config" }
             json = JSON.dump(payload)
+            Datadog.logger.error { "payload: #{json}" }
             parcel = EncodedParcel.new(json)
             request = Request.new(parcel)
 

@@ -176,6 +176,7 @@ module Datadog
           # Extensions for HTTP client
           module Client
             def send_config_payload(request)
+              Datadog.logger.error { "Datadog::Core::Transport::HTTP::Config#send_config_payload" }
               send_request(request) do |api, env|
                 api.send_config(env)
               end

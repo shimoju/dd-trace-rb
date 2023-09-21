@@ -30,7 +30,10 @@ module Datadog
 
         # rubocop:disable Metrics/AbcSize,Metrics/PerceivedComplexity,Metrics/MethodLength,Metrics/CyclomaticComplexity
         def sync
+          Datadog.logger.error { "Datadog::Core::Remote::Client#sync start:" }
           # TODO: Skip sync if no capabilities are registered
+          Datadog.logger.error { "Datadog::Core::Remote::Client#sync: class: #{transport.class}, transport: #{transport}" }
+
           response = transport.send_config(payload)
 
           if response.ok?
@@ -109,6 +112,7 @@ module Datadog
               dispatcher.dispatch(changes, repository)
             end
           elsif response.internal_error?
+            Datadog.logger.error { "Datadog::Core::Remote::Client#sync request error: class: #{response.class}, inspect: #{response.inspect}, methods: #{response.methods}" }
             raise TransportError, response.to_s
           end
         end

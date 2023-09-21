@@ -18,17 +18,21 @@ module Datadog
         attr_reader :client
 
         def initialize(settings, capabilities, agent_settings)
+          Datadog.logger.error { "Datadog::Core::Remote::Component#new: settings: #{settings}, capabilities: #{capabilities}, agent_settings: #{agent_settings}" }
+
           transport_options = {}
           transport_options[:agent_settings] = agent_settings if agent_settings
 
           negotiation = Negotiation.new(settings, agent_settings)
           transport_v7 = Datadog::Core::Transport::HTTP.v7(**transport_options.dup)
+          Datadog.logger.error { "transport: #{transport_v7}" }
 
           @barrier = Barrier.new(BARRIER_TIMEOUT)
 
           @client = Client.new(transport_v7, capabilities)
+          Datadog.logger.error { "@client: #{client}" }
           healthy = false
-          Datadog.logger.debug { "new remote configuration client: #{@client.id}" }
+          Datadog.logger.error { "new remote configuration client: #{@client.id}" }
 
           @worker = Worker.new(interval: settings.remote.poll_interval_seconds) do
             unless healthy || negotiation.endpoint?('/v0.7/config')
@@ -38,7 +42,9 @@ module Datadog
             end
 
             begin
+              Datadog.logger.error { "Datadog::Core::Remote::Component#new: call @client.sync" }
               @client.sync
+              Datadog.logger.error { "Datadog::Core::Remote::Component#new: success @client.sync" }
               healthy ||= true
             rescue Client::SyncError => e
               Datadog.logger.error do
@@ -51,14 +57,14 @@ module Datadog
               negotiation = Negotiation.new(settings, agent_settings)
 
               Datadog.logger.error do
-                "remote worker error: #{e.class.name} #{e.message} location: #{Array(e.backtrace).first}. "\
+                "remote worker error: #{e.class.name} #{e.message} location: #{Array(e.backtrace)}. "\
                 'reseting client state'
               end
 
               # client state is unknown, state might be corrupted
               @client = Client.new(transport_v7, capabilities)
               healthy = false
-              Datadog.logger.debug { "new remote configuration client: #{@client.id}" }
+              Datadog.logger.error { "retry: new remote configuration client: #{@client.id}" }
 
               # TODO: bail out if too many errors?
             end
